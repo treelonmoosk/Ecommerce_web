@@ -1,79 +1,215 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>products page</title>
-    <link rel="stylesheet" href="ProductStyle.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Products Page</title>
+  <link rel="stylesheet" href="ProductStyle.css" />
+  <style>
+    /* Quick cart styles */
+    .cart {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 300px;
+      height: 100%;
+      background: #f9f9f9;
+      border-left: 2px solid #ccc;
+      padding: 1rem;
+      overflow-y: auto;
+      display: none;
+    }
+    .cart.open { display: block; }
+    .cart h2 { margin-top: 0; }
+    .cart-item { display: flex; justify-content: space-between; margin: 0.5rem 0; }
+    .cart-item span { font-size: 0.9rem; }
+    .cart-total { font-weight: bold; margin-top: 1rem; }
+    .product-card { border: 1px solid #ddd; padding: 1rem; margin: 0.5rem; text-align: center; }
+    .product-card button { margin-top: 0.5rem; }
+    #cartToggle { position: fixed; bottom: 1rem; right: 1rem; padding: 0.5rem 1rem; }
+
+    /* Filters */
+    #filters {
+      margin: 1rem;
+      padding: 0.5rem;
+      background: #f0f0f0;
+      border: 1px solid #ccc;
+    }
+    #filters label {
+      margin-right: 0.5rem;
+    }
+    #filters select, #filters input {
+      margin-right: 1rem;
+    }
+  </style>
 </head>
-
 <body>
-    <header>
-        <div class="navigation">
-                <nav>
-                    <ul>
-                        <li><a href="Home.html">Home</a></li>
-                        <li><a href="Products.html">Products</a></li>
-                        <li><a href="About.html">About Us</a></li>
-                        <li><a href="Contact.html">Contact Us</a></li>
-                    </ul>
-                </nav>
+  <header>
+    <div class="navigation">
+      <nav>
+        <ul>
+          <li><a href="Home.html">Home</a></li>
+          <li><a href="Products.html">Products</a></li>
+          <li><a href="About.html">About Us</a></li>
+          <li><a href="Contact.html">Contact Us</a></li>
+        </ul>
+      </nav>
+      <h1>One Board Shop</h1>
+      <input type="text" id="searchBar" placeholder="Search products..." />
+    </div>
+  </header>
 
-        <h1>One Board shop</h1>
-        <input type="text" id="searchBar" placeholder="Search products..." />
-    </header>
+  <main>
+    <!-- Filters -->
+    <section id="filters">
+      <label for="categoryFilter">Category:</label>
+      <select id="categoryFilter">
+        <option value="all">All</option>
+        <option value="skate">Skateboarding</option>
+        <option value="snow">Snowboarding</option>
+      </select>
 
-    <main>
-        <section id="inventory" class="product-grid"></section>
-    </main>
+      <label for="priceFilter">Max Price:</label>
+      <input type="number" id="priceFilter" placeholder="e.g. 100" />
+    </section>
 
-    <script>
-        const products = [
-            { name: "Classic Deck", description: "Maple wood deck", image: "images/skatedeck.jpg" },
-            { name: "Street Wheels", description: "Set of 4 urethane wheels for street skating", image: "images/skatewheels.webp" },
-            { name: "Pro Bearings", description: "High-speed ABEC-9 bearings", image: "images/skatebearings.webp" },
-            { name: "Skate Shoes", description: "Durable grip shoes for skating", image: "images/skateshoes.jpg" },
-            { name: "Helmet", description: "Protective gear for safe skating", image: "images/skatehelmet.jpg" },
-            { name: "Nitro pro board", description: "Nitro grade snow board", image: "images/Nitro pro board.webp" },
-            { name: "Burton waverange", description: "Burton womens waverange snow boots", image:"images/burton waverange step on.webp" },
-            {name : "Snowboard Gloves", description: "Waterproof gloves for snowboarding", image:"images/snowboardGloves.jpg"},
-            {name: "Burton waverange", description: "Burton womens waverange snow boots", image:"images/Burton womens waverange.png" },
-             {name: "Nito Teams", description: "Nitro teams retro snow board", image:"images/nitro teams.webp" },
-             {name: "Nito Teams", description: "Nitro teams retro snow board", image:"images/Nitro snow board.webp" },
-             {name: "snow jacket", description: "cozy snow jackets", image:"images/snow jacket.jpg" },
-            
-        ];
+    <!-- Product Grid -->
+    <section id="inventory" class="product-grid"></section>
+  </main>
 
-        const inventorySection = document.getElementById("inventory");
-        const searchBar = document.getElementById("searchBar");
+  <!-- Cart Sidebar -->
+  <aside id="cart" class="cart">
+    <h2>Your Cart</h2>
+    <div id="cartItems"></div>
+    <div class="cart-total">Total: $<span id="cartTotal">0.00</span></div>
+    <button onclick="checkout()">Checkout</button>
+  </aside>
 
-        function displayProducts(filteredProducts) {
-            inventorySection.innerHTML = "";
-            filteredProducts.forEach(product => {
-                const card = document.createElement("div");
-                card.className = "product-card";
-                card.innerHTML = `
-      <img src="${product.image}" alt="${product.name}" />
-      <h3>${product.name}</h3>
-      <p>${product.description}</p>
-    `;
-                inventorySection.appendChild(card);
-            });
+  <!-- Toggle button -->
+  <button id="cartToggle">🛒 Cart</button>
+
+  <script>
+    const products = [
+      { name: "Classic Deck", description: "Maple wood deck", image: "images/skatedeck.jpg", price: 60, category: "skate" },
+      { name: "Street Wheels", description: "Set of 4 urethane wheels", image: "images/skatewheels.webp", price: 30, category: "skate" },
+      { name: "Pro Bearings", description: "High-speed ABEC-9 bearings", image: "images/skatebearings.webp", price: 25, category: "skate" },
+      { name: "Skate Shoes", description: "Durable grip shoes", image: "images/skateshoes.jpg", price: 80, category: "skate" },
+      { name: "Helmet", description: "Protective gear", image: "images/skatehelmet.jpg", price: 50, category: "skate" },
+      { name: "Nitro Pro Board", description: "Nitro grade snowboard", image: "images/Nitro pro board.webp", price: 300, category: "snow" },
+      { name: "Burton Waverange", description: "Burton womens snow boots", image:"images/burton waverange step on.webp", price: 200, category: "snow" },
+      { name: "Snowboard Gloves", description: "Waterproof gloves", image:"images/snowboardGloves.jpg", price: 40, category: "snow" },
+      { name: "Snow Jacket", description: "Cozy snow jackets", image:"images/snow jacket.jpg", price: 120, category: "snow" }
+    ];
+
+    const inventorySection = document.getElementById("inventory");
+    const searchBar = document.getElementById("searchBar");
+    const cartEl = document.getElementById("cart");
+    const cartItemsEl = document.getElementById("cartItems");
+    const cartTotalEl = document.getElementById("cartTotal");
+    const cartToggle = document.getElementById("cartToggle");
+    const categoryFilter = document.getElementById("categoryFilter");
+    const priceFilter = document.getElementById("priceFilter");
+
+    let cart = {};
+
+    // Display all products once
+    function displayProducts(allProducts) {
+      inventorySection.innerHTML = "";
+      allProducts.forEach((product, index) => {
+        const card = document.createElement("div");
+        card.className = "product-card";
+        card.setAttribute("data-category", product.category);
+        card.setAttribute("data-price", product.price);
+
+        card.innerHTML = `
+          <img src="${product.image}" alt="${product.name}" />
+          <h3>${product.name}</h3>
+          <p>${product.description}</p>
+          <p>$${product.price}</p>
+          <button onclick="addToCart(${index})">Add to Cart</button>
+        `;
+        inventorySection.appendChild(card);
+      });
+    }
+
+    function addToCart(index) {
+      const product = products[index];
+      if (!cart[product.name]) {
+        cart[product.name] = { ...product, qty: 1 };
+      } else {
+        cart[product.name].qty++;
+      }
+      renderCart();
+    }
+
+    function renderCart() {
+      cartItemsEl.innerHTML = "";
+      let total = 0;
+      for (const key in cart) {
+        const item = cart[key];
+        total += item.price * item.qty;
+        const div = document.createElement("div");
+        div.className = "cart-item";
+        div.innerHTML = `
+          <span>${item.name} (x${item.qty})</span>
+          <span>$${(item.price * item.qty).toFixed(2)}</span>
+          <button onclick="removeFromCart('${item.name}')">Remove</button>
+        `;
+        cartItemsEl.appendChild(div);
+      }
+      cartTotalEl.textContent = total.toFixed(2);
+    }
+
+    function removeFromCart(name) {
+      delete cart[name];
+      renderCart();
+    }
+
+    function checkout() {
+      alert("Checkout complete! Thank you for shopping.");
+      cart = {};
+      renderCart();
+    }
+
+    // Filters (category + price + search combined)
+    function applyFilters() {
+      const category = categoryFilter.value;
+      const maxPrice = parseFloat(priceFilter.value);
+      const keyword = searchBar.value.toLowerCase();
+
+      const cards = document.querySelectorAll(".product-card");
+      cards.forEach(card => {
+        const cardCategory = card.getAttribute("data-category");
+        const cardPrice = parseFloat(card.getAttribute("data-price"));
+        const cardName = card.querySelector("h3").textContent.toLowerCase();
+        const cardDesc = card.querySelector("p").textContent.toLowerCase();
+
+        let visible = true;
+
+        if (category !== "all" && cardCategory !== category) {
+          visible = false;
+        }
+        if (!isNaN(maxPrice) && cardPrice > maxPrice) {
+          visible = false;
+        }
+        if (keyword && !(cardName.includes(keyword) || cardDesc.includes(keyword))) {
+          visible = false;
         }
 
-        searchBar.addEventListener("input", () => {
-            const keyword = searchBar.value.toLowerCase();
-            const filtered = products.filter(product =>
-                product.name.toLowerCase().includes(keyword) ||
-                product.description.toLowerCase().includes(keyword)
-            );
-            displayProducts(filtered);
-        });
+        card.style.display = visible ? "block" : "none";
+      });
+    }
 
-        // Initial display
-        displayProducts(products);
-    </script>
+    // Event listeners
+    categoryFilter.addEventListener("change", applyFilters);
+    priceFilter.addEventListener("input", applyFilters);
+    searchBar.addEventListener("input", applyFilters);
+    cartToggle.addEventListener("click", () => {
+      cartEl.classList.toggle("open");
+    });
+
+    // Initial display
+    displayProducts(products);
+  </script>
 </body>
-
 </html>
